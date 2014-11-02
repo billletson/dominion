@@ -6,12 +6,17 @@ class Game:
         self.players = args
         for p in self.players:
             p.game = self
+        self.kingdom = None
+        self.reset()
+
+    def reset(self):
+        self.kingdom = {'copper': 1000, 'silver': 1000, 'gold': 1000, 'estate': 1000, 'duchy': 1000, 'curse': 1000}
         if len(self.players) == 1:
-            self.starting_provinces = 4
+            self.kingdom['province'] = 4
         elif len(self.players) == 2:
-            self.starting_provinces = 8
+            self.kingdom['province'] = 8
         else:
-            self.starting_provinces = 12
+            self.kingdom['province'] = 12
 
     def simulate(self, iterations=10000):
         wins = [0] * len(self.players)
@@ -25,16 +30,24 @@ class Game:
                 wins[w] += 1
             for deck in self.players:
                 deck.reset()
+            self.reset()
         return [w/iterations for w in wins]
 
     def game_complete(self):
-        if self.remaining_provinces() == 0:
+        if self.remaining_cards('province') == 0:
             return True
         else:
             return False
 
-    def remaining_provinces(self):
-        return self.starting_provinces - sum([deck.count_card('Province') for deck in self.players])
+    def remaining_cards(self, card):
+        return self.kingdom.get(card, 0)
+
+    def buy_card(self, card):
+        if card in self.kingdom and self.kingdom[card] > 0:
+            self.kingdom[card] -= 1
+            return True
+        else:
+            return False
 
     def determine_winners(self):
         max_score = 0

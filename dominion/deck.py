@@ -1,12 +1,12 @@
 from __future__ import division
 import random
-from .game import *
+from .game import Game
+from .cards import VALUES, SCORES, COSTS
+import itertools
 
 
 class Deck:
-    values = {'Copper': 1, 'Silver': 2, 'Gold': 3}
-    scores = {'Estate': 1, 'Duchy': 3, 'Province': 6}
-    start = ['Copper'] * 7 + ['Estate'] * 3
+    start = ['copper'] * 7 + ['estate'] * 3
 
     def __init__(self, buy_strategy):
         self.library = []
@@ -37,10 +37,10 @@ class Deck:
             self.library = self.library[remaining:]
 
     def hand_value(self):
-        return sum([self.values.get(x, 0) for x in self.hand])
+        return sum([VALUES.get(x, 0) for x in self.hand])
 
     def deck_score(self):
-        return sum([self.scores.get(x, 0) for x in self.library + self.discard + self.hand])
+        return sum([SCORES.get(x, 0) for x in self.library + self.discard + self.hand])
 
     def deck_size(self):
         return len(self.library) + len(self.discard) + len(self.hand)
@@ -57,23 +57,26 @@ class Deck:
         self.turns = 0
 
     def buy(self):
-        card = self.buy_strategy(self)
-        if card:
-            self.discard.append(card)
+        strategy = itertools.tee(self.buy_strategy(self), 1)[0]
+        budget = self.hand_value()
+        for card in strategy:
+            if COSTS[card] <= budget and self.game.buy_card(card):
+                self.discard.append(card)
+                break
 
-    def solataire_benchmarks(self, iterations=10000):
+    def solitaire_benchmarks(self, iterations=10000):
         time = []
         scores = []
         for _ in xrange(iterations):
-            while self.count_card('Province') < 4:
+            while self.count_card('province') < 4:
                 self.turn()
             time.append(self.turns)
             scores.append(self.deck_score())
             self.reset()
         return sum(time)/iterations, sum(scores)/iterations
 
-    def remaining_provinces(self):
-        return self.game.remaining_provinces()
+    def remaining_cards(self, card):
+        return self.game.remaining_cards(card)
 
     def deficit(self):
         return self.game.leading_score() - self.deck_score

@@ -1,3 +1,3 @@
 from .deck import *
 from .game import *
-from .buy_strategies import *
+from .strategies.buy_strategies import *
