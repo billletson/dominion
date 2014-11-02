@@ -24,17 +24,17 @@ class Deck:
 
     def new_hand(self):
         self.discard += self.hand
-        if len(self.library) >= 5:
-            self.hand = self.library[:5]
-            self.library = self.library[5:]
-        else:
-            self.hand = self.library[:]
+        self.hand = []
+        while len(self.hand) < 5:
+            self.draw()
+
+    def draw(self):
+        if not self.library:
             random.shuffle(self.discard)
             self.library = self.discard[:]
             self.discard = []
-            remaining = 5 - len(self.hand)
-            self.hand += self.library[:remaining]
-            self.library = self.library[remaining:]
+        self.hand.append(self.library[0])
+        self.library = self.library[1:]
 
     def hand_value(self):
         return sum([VALUES.get(x, 0) for x in self.hand])
@@ -61,6 +61,7 @@ class Deck:
         budget = self.hand_value()
         for card in strategy:
             if COSTS[card] <= budget and self.game.buy_card(card):
+                #print card
                 self.discard.append(card)
                 break
 
