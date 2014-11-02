@@ -63,3 +63,30 @@ def optimal_big_money_w_ppr(deck):
     yield 'silver'
     if provinces <= 3:
         yield 'estate'
+
+
+def smithy_bm(deck):
+    if deck.count_card('smithy') < 1:
+        yield 'smithy'
+    yield 'province'
+    yield 'gold'
+    yield 'silver'
+
+
+def optimized_smithy_bm(deck):
+    provinces = deck.remaining_cards('province')
+    if 0 < deck.deficit < 3 and provinces == 2:
+        yield 'duchy'
+    if deck.count_card('gold') == 0:
+        yield "gold"
+    yield 'province'
+    if deck.count_card('smithy') < 1:
+        yield 'smithy'
+    if provinces <= 5:
+        yield 'duchy'
+    yield 'gold'
+    if provinces <= 2:
+        yield "estate"
+    yield 'silver'
+    if provinces <= 3:
+        yield 'estate'

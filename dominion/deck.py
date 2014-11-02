@@ -1,23 +1,31 @@
 from __future__ import division
 import random
 from .game import Game
-from .cards import VALUES, SCORES, COSTS
+from .cards import VALUES, SCORES, COSTS, ACTIONS
 import itertools
 
 
 class Deck:
     start = ['copper'] * 7 + ['estate'] * 3
 
-    def __init__(self, buy_strategy):
+    def __init__(self, buy_strategy, action_strategy):
         self.library = []
         self.discard = []
         self.hand = []
         self.turns = 0
         self.reset()
         self.buy_strategy = buy_strategy
+        self.action_strategy = action_strategy
         self.game = Game(self)
+        self.buys = 1
+        self.actions = 1
+        self.bonus_treasure = 0
 
     def turn(self):
+        self.buys = 1
+        self.actions = 1
+        self.bonus_treasure = 0
+        self.action()
         self.buy()
         self.new_hand()
         self.turns += 1
@@ -37,7 +45,7 @@ class Deck:
         self.library = self.library[1:]
 
     def hand_value(self):
-        return sum([VALUES.get(x, 0) for x in self.hand])
+        return sum([VALUES.get(x, 0) for x in self.hand]) + self.bonus_treasure
 
     def deck_score(self):
         return sum([SCORES.get(x, 0) for x in self.library + self.discard + self.hand])
@@ -57,13 +65,30 @@ class Deck:
         self.turns = 0
 
     def buy(self):
-        strategy = itertools.tee(self.buy_strategy(self), 1)[0]
         budget = self.hand_value()
-        for card in strategy:
-            if COSTS[card] <= budget and self.game.buy_card(card):
-                #print card
-                self.discard.append(card)
-                break
+        while self.buys > 0:
+            strategy = itertools.tee(self.buy_strategy(self), 1)[0]
+            for card in strategy:
+                if COSTS[card] <= budget and self.game.buy_card(card):
+                    self.discard.append(card)
+                    budget -= COSTS[card]
+                    self.buys -= 1
+                    break
+            else:
+                self.buys = 0
+
+    def action(self):
+        while self.actions > 0:
+            strategy = itertools.tee(self.action_strategy(self), 1)[0]
+            for card in strategy:
+                if card in self.hand:
+                    ACTIONS[card](self)
+                    self.discard.append(self.hand.pop(self.hand.index(card)))
+                    self.actions -= 1
+                    break
+
+            else:
+                self.actions = 0
 
     def solitaire_benchmarks(self, iterations=10000):
         time = []
@@ -74,6 +99,7 @@ class Deck:
             time.append(self.turns)
             scores.append(self.deck_score())
             self.reset()
+            self.game.reset()
         return sum(time)/iterations, sum(scores)/iterations
 
     def remaining_cards(self, card):

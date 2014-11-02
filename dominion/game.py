@@ -7,10 +7,13 @@ class Game:
         for p in self.players:
             p.game = self
         self.kingdom = None
+        self.cards = ['smithy']
         self.reset()
 
     def reset(self):
         self.kingdom = {'copper': 1000, 'silver': 1000, 'gold': 1000, 'estate': 1000, 'duchy': 1000, 'curse': 1000}
+        for card in self.cards:
+            self.kingdom[card] = 10
         if len(self.players) == 1:
             self.kingdom['province'] = 4
         elif len(self.players) == 2:
