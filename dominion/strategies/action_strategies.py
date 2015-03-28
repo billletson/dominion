@@ -3,4 +3,4 @@ def no_actions(deck):
 
 
 def smithy(deck):
-    yield 'smithy'
+    yield ('smithy', None)

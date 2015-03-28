@@ -10,8 +10,9 @@ class Deck:
 
     def __init__(self, buy_strategy, action_strategy):
         self.library = []
-        self.discard = []
+        self.discard_pile = []
         self.hand = []
+        self.set_asides = []
         self.turns = 0
         self.reset()
         self.buy_strategy = buy_strategy
@@ -31,16 +32,16 @@ class Deck:
         self.turns += 1
 
     def new_hand(self):
-        self.discard += self.hand
+        self.discard_pile += self.hand
         self.hand = []
         while len(self.hand) < 5:
             self.draw()
 
     def draw(self):
         if not self.library:
-            random.shuffle(self.discard)
+            random.shuffle(self.discard_pile)
             self.library = self.discard[:]
-            self.discard = []
+            self.discard_pile = []
         self.hand.append(self.library[0])
         self.library = self.library[1:]
 
@@ -48,18 +49,18 @@ class Deck:
         return sum([VALUES.get(x, 0) for x in self.hand]) + self.bonus_treasure
 
     def deck_score(self):
-        return sum([SCORES.get(x, 0) for x in self.library + self.discard + self.hand])
+        return sum([SCORES.get(x, 0) for x in self.library + self.discard_pile + self.hand])
 
     def deck_size(self):
-        return len(self.library) + len(self.discard) + len(self.hand)
+        return len(self.library) + len(self.discard_pile) + len(self.hand)
 
     def count_card(self, card):
-        return sum([1 for x in self.library + self.discard + self.hand if x == card])
+        return sum([1 for x in self.library + self.discard_pile + self.hand if x == card])
 
     def reset(self):
         self.library = self.start[:]
         random.shuffle(self.library)
-        self.discard = []
+        self.discard_pile = []
         self.hand = []
         self.new_hand()
         self.turns = 0
@@ -70,7 +71,7 @@ class Deck:
             strategy = itertools.tee(self.buy_strategy(self), 1)[0]
             for card in strategy:
                 if COSTS[card] <= budget and self.game.buy_card(card):
-                    self.discard.append(card)
+                    self.discard_pile.append(card)
                     budget -= COSTS[card]
                     self.buys -= 1
                     break
@@ -82,13 +83,29 @@ class Deck:
             strategy = itertools.tee(self.action_strategy(self), 1)[0]
             for card in strategy:
                 if card in self.hand:
+                    self.set_aside(card)
                     ACTIONS[card](self)
-                    self.discard.append(self.hand.pop(self.hand.index(card)))
                     self.actions -= 1
                     break
-
             else:
                 self.actions = 0
+
+    def discard(self, card):
+        self.discard_pile.append(self.hand.pop(self.hand.index(card[0])))
+
+    def set_aside(self, card):
+        self.set_asides = self.hand.pop(self.hand.index(card[0]))
+
+    def return_set_asides(self):
+        self.hand += self.set_asides
+        self.set_asides = []
+
+    def discard_set_asides(self):
+        self.discard_pile += self.set_asides
+        self.set_asides = []
+
+    def trash(self, card):
+        self.hand.pop(self.hand.index(card[0]))
 
     def solitaire_benchmarks(self, iterations=10000):
         time = []
